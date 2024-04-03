@@ -14,5 +14,11 @@ void print_prompt(void) {
 
 int main(){
     print_prompt();
-    return 1;
+    int buffer_size = 512;
+    char user_input[buffer_size];
+    if( 0 == fgets(user_input, buffer_size, stdin) ) {
+        puts("Something went wrong.");
+    }
+    printf("%s", user_input);
+    return 0;
 }

@@ -3,5 +3,8 @@ FLAGS = -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wconv
 
 all: minishell.o
 
+run: all
+	./minishell
+
 minishell.o: 
 	$(CC) ./src/main.c -o minishell $(FLAGS)
