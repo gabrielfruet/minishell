@@ -1,7 +1,7 @@
 #include <stdio.h>
-#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "command/command.h"
 
 void print_prompt(void) {
     const uint BUFFER_SIZE = 64;
@@ -19,6 +19,7 @@ int main(){
     if( 0 == fgets(user_input, buffer_size, stdin) ) {
         puts("Something went wrong.");
     }
-    printf("%s", user_input);
+    commandlist_t* cmdlist = parse_command(user_input);
+    free_cmdlist(cmdlist);
     return 0;
 }

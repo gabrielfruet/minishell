@@ -1,10 +1,19 @@
 CC = gcc
 FLAGS = -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Wcast-align -Wconversion
+TARGET=./target
 
-all: minishell.o
+all: minishell
 
 run: all
 	./minishell
 
-minishell.o: 
-	$(CC) ./src/main.c -o minishell $(FLAGS)
+
+src.o:
+	make all -C ./src
+
+OBJ_FILES = $(TARGET)/command.o $(TARGET)/main.o
+
+minishell: src.o
+	$(CC) $(OBJ_FILES) -o minishell
+
+
