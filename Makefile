@@ -7,11 +7,10 @@ all: minishell
 run: all
 	./minishell
 
-
 src.o:
 	make all -C ./src
 
-OBJ_FILES = $(TARGET)/command.o $(TARGET)/main.o
+OBJ_FILES = $(TARGET)/command.o $(TARGET)/main.o $(TARGET)/redirection.o
 
 minishell: src.o
 	$(CC) $(OBJ_FILES) -o minishell

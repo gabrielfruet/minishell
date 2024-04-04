@@ -1,45 +1,57 @@
 #include "command.h"
-
+#include "redirection.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include "list.h"
 
-void cmdlist_print(commandlist_t* cmdlist) {
-    if(cmdlist == NULL) fwrite("NULL", sizeof(char), 5, stdout);
-    else {
-        printf(" %s ->", cmdlist->command_str);
+IMPL_LIST_APPEND(cmdlist_append, cmdlist_t)
+
+static cmdlist_t* cmdlist_alloc(redirlist_t* redirlist) {
+    cmdlist_t* cmdlist = malloc(sizeof(cmdlist_t));
+    if (cmdlist == NULL) {
+        perror("Something went wrong when using malloc on cmdlist_alloc");
+        exit(1);
+    }
+    cmdlist->redirlist = redirlist;
+    cmdlist->next = NULL;
+    return cmdlist;
+}
+
+void cmdlist_print(cmdlist_t* cmdlist) {
+    if(cmdlist == NULL) {
+        write(STDOUT_FILENO, "NULL", 5);
+        fflush(stdout);
+    } else {
+        write(STDOUT_FILENO, "RedirList[ ", 12);
+        redirlist_print(cmdlist->redirlist);
+        write(STDOUT_FILENO, "] ", 3);
         cmdlist_print(cmdlist->next);
     }
 
 }
 
-commandlist_t* parse_command(char* command_str) {
+
+cmdlist_t* cmd_parse(char* prompt) {
     char* saveptr = NULL;
-    commandlist_t* cmdlist = allocate_cmdlist(NULL);
-    commandlist_t* cmditer = cmdlist;
-    for(char* str = command_str;;str=NULL){
+    cmdlist_t* cmdlist = NULL;
+    cmdlist_t** cmditer = &cmdlist;
+
+    for(char* str = prompt;;str=NULL){
         char* cmd = strtok_r(str, ";", &saveptr);
         if (cmd == NULL) break;
-        cmditer->next = allocate_cmdlist(cmd);
-        cmditer = cmditer->next;
+        
+        cmdlist_append(cmditer, cmdlist_alloc(redirlist_parse(cmd)));
+        cmditer = &((*cmditer)->next);
     }
-    printf("%p", cmdlist);
-    cmdlist_print(cmdlist);
     return cmdlist;
 }
 
-commandlist_t* allocate_cmdlist(char* command_str) {
-    commandlist_t* cmdlist = malloc(sizeof(commandlist_t));
-    cmdlist->command_str = command_str;
-    cmdlist->next = NULL;
-    return cmdlist;
-}
-
-void free_cmdlist(commandlist_t* cmdlist) {
-    if(cmdlist == NULL) return;
-    free_cmdlist(cmdlist->next);
-    //free(cmdlist->command_str);
-    free(cmdlist);
+void cmdlist_free(cmdlist_t* list) {
+    if(list == NULL) return;
+    redirlist_free(list->redirlist);
+    cmdlist_free(list->next);
+    free(list);
 }
 
