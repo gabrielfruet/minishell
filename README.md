@@ -12,7 +12,7 @@ make all
 
 This will compile the necessary files and create the minishell executable.
 
-⚡ Usage
+## ⚡ Usage
 
 Once you have built Minishell, you can start it by executing the following command in your terminal:
 
@@ -22,7 +22,7 @@ Once you have built Minishell, you can start it by executing the following comma
 
 You are now ready to use Minishell! Try out commands as you would in any standard shell.
 
-🌟 Features
+## 🌟 Features
 
 Minishell supports several features to give you a taste of shell programming:
 
