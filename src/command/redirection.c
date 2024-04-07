@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include "sys/wait.h"
@@ -46,7 +47,7 @@ redirlist_t* redirlist_parse(char* command) {
     for(char* str = command;;str=NULL){
         char* to_exec = strtok_r(str, REDIR_CHARS, &saveptr);
         if (to_exec == NULL) break;
-        
+
         redirlist_append(rediriter, redirlist_alloc(to_exec, '|'));
         rediriter = &((*rediriter)->next);
     }
@@ -54,14 +55,14 @@ redirlist_t* redirlist_parse(char* command) {
 }
 
 size_t redir_len(redirlist_t* list){
-    if(list->next == NULL) return 0;
+    if(list == NULL) return 0;
     else return redir_len(list->next) + 1;
 }
 
 #define PIPE_READ 0
 #define PIPE_WRITE 1
 
-static void splitargs(char** buffer, size_t buffer_size, char* command) {
+static void splitargs(const char** buffer, size_t buffer_size, char* command) {
     char* saveptr;
     char* str = command;
     size_t i = 0;
@@ -73,17 +74,80 @@ static void splitargs(char** buffer, size_t buffer_size, char* command) {
     buffer[i] = NULL;
 }
 
+char* SHELL_CMDS_NAMES[] = {
+    "exit",
+    "cd"
+};
+
+typedef void(*shellcmdfunc)(const char** args);
+
+void shell_cmd_exit(const char** args) {
+    const char* str_exitno = args[1] == NULL ? "0" : args[1];
+    int exitno = atoi(str_exitno);
+    exit(exitno);
+}
+
+void shell_cmd_cd(const char** args) {
+    const char* path = args[1] == NULL ? "~" : args[1];
+    if(chdir(path) != 0) {
+        perror("cd");
+    }
+}
+
+shellcmdfunc SHELL_CMD_FUNCS[] = {
+    &shell_cmd_exit,
+    &shell_cmd_cd
+};
+
+#define SHELL_CMD_SIZE sizeof(SHELL_CMDS_NAMES)/sizeof(char*)
+
+void execute_cmd(const char** restrict args) {
+    for(size_t i = 0; i < SHELL_CMD_SIZE; i++) {
+        if(strncmp(SHELL_CMDS_NAMES[i], args[0], 128) == 0) {
+            (*SHELL_CMD_FUNCS[i])(args);
+            return;
+        }
+    }
+    if(execvp(args[0], args)) {
+        perror("Process image transition failed");
+        exit(1);
+    }
+}
+
+int is_shell_cmd(const char** args) {
+    for(size_t i = 0; i < SHELL_CMD_SIZE; i++) {
+        if(strncmp(SHELL_CMDS_NAMES[i], args[0], 128) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 int redir_exec(redirlist_t* list) {
     size_t list_size = redir_len(list);
     redirlist_t* rediriter = list;
 
     int pipes[list_size][2];
+
     for(size_t i = 0; i < list_size; i++) {
         pipe(pipes[i]);
     }
+
     pid_t pids[list_size];
     for(size_t i = 0; i < list_size; i++, rediriter = rediriter->next){
         pid_t pid;
+
+        size_t buf_size = 8;
+        const char* args[8];
+        splitargs(args, buf_size, rediriter->to_exec);
+
+        int scmdi;
+
+        if ((scmdi = is_shell_cmd(args)) >= 0) {
+            execute_cmd(args);
+            continue;
+        }
+
         if ((pid = fork()) < 0) {
             perror("Some error on fork at redir_exec");
             exit(-1);
@@ -101,13 +165,7 @@ int redir_exec(redirlist_t* list) {
                 close(pipes[j][PIPE_WRITE]);
             }
 
-            size_t buf_size = 8;
-            char* args[8];
-            splitargs(args, buf_size, rediriter->to_exec);
-            if(execvp(args[0], args)) {
-                perror("Process image transition failed");
-                exit(1);
-            }
+            execute_cmd(args);
         } else {
             pids[i] = pid;
         }
