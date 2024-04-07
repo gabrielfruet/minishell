@@ -26,7 +26,7 @@ You are now ready to use Minishell! Try out commands as you would in any standar
 
 Minishell supports several features to give you a taste of shell programming:
 
-    Pipes: Chain commands together using pipes to direct the output of one command as the input to another. For example:
+Pipes: Chain commands together using pipes to direct the output of one command as the input to another. For example:
 
 ```bash
 ls -la | grep mini
