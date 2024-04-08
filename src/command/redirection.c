@@ -89,7 +89,7 @@ void shell_cmd_exit(const char** args) {
 }
 
 void shell_cmd_cd(const char** args) {
-    const char* path = args[1] == NULL ? "~" : args[1];
+    const char* path = args[1] == NULL ? getenv("HOME") : args[1];
     if(chdir(path) != 0) {
         perror(RED "cd");
     }
