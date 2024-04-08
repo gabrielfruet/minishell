@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>h
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 #include "colors.h"
+#include "command/redirection.h"
 #include "command/command.h"
 
 void print_prompt(void) {
@@ -12,7 +14,15 @@ void print_prompt(void) {
 
     const char* username = getlogin();
     getcwd(working_directory, BUFFER_SIZE);
-    printf(BLU "%s"WHT" at "YEL"%s\n" CRESET, username, working_directory);
+    char* home_name = getenv("HOME");
+    char* home_start = strstr(working_directory, home_name);
+    if (home_start != NULL) {
+        size_t home_size = strlen(home_name)*sizeof(char);
+        size_t cwd_size = strlen(working_directory)*sizeof(char);
+        memmove(working_directory + 1, working_directory + home_size, BUFFER_SIZE-home_size);
+        working_directory[0] = '~';
+    }
+    printf(BLU "%s" WHT " at " YEL "%s\n" CRESET, username, working_directory);
     printf(GRN " → " CRESET);
 }
 
