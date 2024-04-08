@@ -8,7 +8,7 @@
 #include "command/redirection.h"
 #include "command/command.h"
 
-void print_prompt(void) {
+void print_prompt(int* elapse_time) {
     const uint BUFFER_SIZE = 64;
     char working_directory[BUFFER_SIZE];
 
@@ -22,8 +22,12 @@ void print_prompt(void) {
         memmove(working_directory + 1, working_directory + home_size, BUFFER_SIZE-home_size);
         working_directory[0] = '~';
     }
-    printf(BLU "%s" WHT " at " YEL "%s\n" CRESET, username, working_directory);
-    printf(GRN " → " CRESET);
+    time_t current_time = time(NULL);
+    struct tm* local_time = localtime(&current_time);
+    printf(BBLU "%s" WHT " at " YEL "%s\n" CRESET, username, working_directory);
+    char hour_minute[6];
+    strftime(hour_minute, sizeof(hour_minute)/sizeof(char), "%H:%M", local_time);
+    printf(BHYEL "%s" GRN " → " CRESET, hour_minute);
 }
 
 /**
@@ -42,7 +46,7 @@ char* read_input(char* buffer, int buffer_size) {
 
 int main(){
     while(1) {
-        print_prompt();
+        print_prompt(NULL);
         int buffer_size = 512;
         char user_input[buffer_size];
         if (NULL == read_input(user_input, buffer_size)) {
